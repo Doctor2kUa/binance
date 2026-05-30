@@ -24,7 +24,7 @@ ENV API_PORT=8000
 HEALTHCHECK --interval=30s --timeout=5s --retries=3 \
     CMD curl -f http://localhost:${API_PORT}/health || exit 1
 
-EXPOSE ${API_PORT>
+EXPOSE 8000
 
 # Run with stderr redirected to stdout for better logging
 CMD ["sh", "-c", "python -u /app/src/main.py 2>&1"]
