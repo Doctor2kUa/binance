@@ -1,0 +1,52 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: binance-watchlist-agent
+  namespace: function
+spec:
+  serviceAccountName: binance-watchlist-agent
+  restartPolicy: Never
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 1000
+    fsGroup: 1000
+    seccompProfile:
+      type: RuntimeDefault
+  containers:
+    - name: agent
+      image: ghcr.io/doctor2kua/binance/watchlist-agent:latest
+      stdin: true
+      tty: true
+      ports:
+        - containerPort: 8000
+      env:
+        - name: API_HOST
+          value: "0.0.0.0"
+        - name: API_PORT
+          value: "8000"
+        - name: OPENROUTER_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: binance-watchlist-secrets
+              key: OPENROUTER_API_KEY
+        - name: BOT_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: binance-watchlist-secrets
+              key: BOT_TOKEN
+        - name: CHAT_ID
+          valueFrom:
+            secretKeyRef:
+              name: binance-watchlist-secrets
+              key: CHAT_ID
+      securityContext:
+        allowPrivilegeEscalation: false
+        capabilities:
+          drop: ["ALL"]
+      resources:
+        requests:
+          cpu: 50m
+          memory: 64Mi
+        limits:
+          cpu: 200m
+          memory: 256Mi

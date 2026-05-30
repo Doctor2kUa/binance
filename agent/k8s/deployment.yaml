@@ -1,23 +1,22 @@
-apiVersion: serving.knative.dev/v1
-kind: Service
+apiVersion: apps/v1
+kind: Deployment
 metadata:
   name: binance-watchlist-agent
   namespace: function
   labels:
     app: binance-watchlist-agent
 spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: binance-watchlist-agent
   template:
     metadata:
       labels:
         app: binance-watchlist-agent
-      annotations:
-        autoscaling.knative.dev/minScale: "0"
-        autoscaling.knative.dev/maxScale: "3"
-        autoscaling.knative.dev/targetConcurrency: "5"
     spec:
-      containerConcurrency: 10
-      timeoutSeconds: 60
-      serviceAccountName: binance-watchlist-agent
+      imagePullSecrets:
+        - name: ghcr-watchlist-agent
       containers:
         - name: agent
           image: ghcr.io/doctor2kua/binance/watchlist-agent:latest
