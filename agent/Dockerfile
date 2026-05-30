@@ -1,21 +1,9 @@
-# ═══ Stage 1: Hermes CLI ════════════════════════════════════════════
-FROM node:20-slim AS hermes
-
-# Install Hermes Agent CLI
-RUN npm install -g hermes-agent --unsafe-perm 2>&1
-
-# ═══ Stage 2: Python + Hermes ════════════════════════════════════════
 FROM python:3.11-slim
 
 # Install curl (needed for healthcheck)
 RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
     && rm -rf /var/lib/apt/lists/*
-
-# Copy Hermes CLI from builder
-COPY --from=hermes /usr/local/bin/hermes /usr/local/bin/hermes
-COPY --from=hermes /usr/local/bin/hermes-agent /usr/local/bin/hermes-agent
-COPY --from=hermes /usr/local/lib/node_modules /usr/local/lib/node_modules
 
 # Install Python deps for analysis
 COPY requirements.txt /app/requirements.txt
