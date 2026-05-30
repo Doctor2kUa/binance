@@ -1,0 +1,104 @@
+{
+  "positions": [
+    {
+      "symbol": "ZECUSDT",
+      "side": "LONG",
+      "type": "FUTURES",
+      "leverage": 2,
+      "opened_at": "2026-05-29",
+      "entry_price": 542,
+      "amount_usdt": 10,
+      "sl": 440,
+      "tp1": 575,
+      "tp2": 580,
+      "tp3": 689,
+      "status": "OPEN"
+    },
+    {
+      "symbol": "BCHUSDT",
+      "side": "LONG",
+      "type": "FUTURES",
+      "leverage": 2,
+      "opened_at": "2026-05-29",
+      "entry_price": 300,
+      "amount_usdt": 10,
+      "sl": 289,
+      "tp1": 333,
+      "tp2": 383,
+      "tp3": 422,
+      "status": "OPEN"
+    }
+  ],
+  "watchlist": [
+    {
+      "symbol": "BCHUSDT",
+      "direction": "LONG",
+      "entry_zone": "300-305",
+      "sl": 289,
+      "tp1": 333,
+      "tp2": 383,
+      "note": "RSI 22 OS, bounce trade"
+    },
+    {
+      "symbol": "EDENUSDT",
+      "direction": "SHORT",
+      "entry_zone": "0.065",
+      "sl": 0.072,
+      "tp1": 0.047,
+      "tp2": 0.035,
+      "note": "Downtrend, vol 2.85x capitulation"
+    },
+    {
+      "symbol": "TRUMPUSDT",
+      "direction": "SHORT_ONLY",
+      "entry_zone": "1.96",
+      "sl": 2.08,
+      "tp1": 1.70,
+      "tp2": 1.50,
+      "note": "Short only. Memecoin. SL tight at +6%."
+    },
+    {
+      "symbol": "HOMEUSDT",
+      "direction": "LONG",
+      "entry_zone": "0.020-0.024",
+      "sl": 0.020,
+      "tp1": 0.031,
+      "tp2": 0.035,
+      "note": "RSI 84 OB, wait pullback"
+    },
+    {
+      "symbol": "DASHUSDT",
+      "direction": "EITHER",
+      "entry_long": 42,
+      "sl_long": 38,
+      "tp1_long": 47,
+      "tp2_long": 54,
+      "entry_short": 39,
+      "sl_short": 42,
+      "tp1_short": 33,
+      "tp2_short": 30,
+      "note": "Wait breakout. L>42 / S<39."
+    },
+    {
+      "symbol": "ALGOUSDT",
+      "direction": "LONG",
+      "entry_zone": "0.110-0.114",
+      "sl": 0.104,
+      "tp1": 0.126,
+      "tp2": 0.137,
+      "note": "Bullish trend, wait pullback for entry"
+    }
+  ],
+  "monitor_settings": {
+    "sl_warning_pct": 5,
+    "sl_danger_pct": 3,
+    "big_move_pct": 5,
+    "check_interval_minutes": 5
+  },
+  "report_settings": {
+    "show_closed_today": true,
+    "show_watchlist": true,
+    "show_indicators": false
+  },
+  "last_updated": "2026-05-30T12:00:00Z"
+}

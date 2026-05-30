@@ -1,0 +1,66 @@
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: binance-watchlist-agent
+  namespace: function
+  labels:
+    app: binance-watchlist-agent
+spec:
+  template:
+    metadata:
+      labels:
+        app: binance-watchlist-agent
+      annotations:
+        autoscaling.knative.dev/minScale: "0"
+        autoscaling.knative.dev/maxScale: "3"
+        autoscaling.knative.dev/targetConcurrency: "5"
+    spec:
+      containerConcurrency: 10
+      timeoutSeconds: 60
+      imagePullSecrets:
+        - name: ghcr-watchlist-agent
+      containers:
+        - name: agent
+          image: ghcr.io/doctor2kua/binance/watchlist-agent:latest
+          ports:
+            - containerPort: 8000
+              protocol: TCP
+          env:
+            - name: API_HOST
+              value: "0.0.0.0"
+            - name: API_PORT
+              value: "8000"
+            - name: OPENROUTER_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: binance-watchlist-secrets
+                  key: OPENROUTER_API_KEY
+            - name: BOT_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: binance-watchlist-secrets
+                  key: BOT_TOKEN
+            - name: CHAT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: binance-watchlist-secrets
+                  key: CHAT_ID
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 200m
+              memory: 256Mi
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 10
+            periodSeconds: 30

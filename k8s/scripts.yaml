@@ -1,0 +1,197 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: binance-scripts
+  namespace: function
+data:
+  # ═══ СКРИПТЫ ═══
+  # Оба CronJob используют positions.json из binance-config
+
+  common.py: |
+    """Shared utilities for report and monitor."""
+    import urllib.request, json, os
+
+    BASE = "https://fapi.binance.com"
+    CONFIG_PATH = "/config/positions.json"
+
+    def api(url):
+        req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
+        return json.loads(urllib.request.urlopen(req, timeout=15).read())
+
+    def load_config():
+        with open(CONFIG_PATH) as f:
+            return json.load(f)
+
+    def send_telegram(msg):
+        token = os.environ["BOT_TOKEN"]
+        chat_id = os.environ["CHAT_ID"]
+        url = f"https://api.telegram.org/bot{token}/sendMessage"
+        data = json.dumps({"chat_id": chat_id, "text": msg}).encode()
+        req = urllib.request.Request(url, data=data, headers={"Content-Type": "application/json"})
+        resp = json.loads(urllib.request.urlopen(req, timeout=10).read())
+        if not resp.get("ok"):
+            print(f"Telegram error: {resp}")
+
+    def F(v):
+        return "$%.4f" % v if v < 1 else "$%.2f" % v
+
+    def P(v):
+        return "%+.1f%%" % v
+
+    def dist(cur, tgt):
+        return "(%+.0f%%)" % ((tgt/cur-1)*100)
+
+    def get_price(sym):
+        t = api(f"{BASE}/fapi/v1/ticker/24hr?symbol={sym}")
+        return float(t['lastPrice']), float(t['priceChangePercent'])
+
+    def calc_pnl(side, lev, entry, px):
+        if side.upper() == "LONG":
+            return (px / entry - 1) * 100 * lev
+        else:
+            return (entry / px - 1) * 100 * lev
+
+  send_report.py: |
+    """Full report: positions + watchlist. Runs every 2h."""
+    import sys; sys.path.insert(0, "/scripts")
+    from common import *
+    from datetime import datetime
+
+    config = load_config()
+    positions = [p for p in config["positions"] if p.get("status") == "OPEN"]
+    watchlist = config.get("watchlist", [])
+
+    now = datetime.utcnow().strftime('%d.%m %H:%M UTC')
+    o = []
+    o.append(f"*Binance Report*  {now}")
+    o.append("")
+
+    # POSITIONS
+    if positions:
+        o.append("*POSITIONS*")
+        o.append("")
+        for p in positions:
+            sym = p["symbol"]
+            name = sym.replace("USDT", "")
+            side = p["side"]
+            lev = p.get("leverage", 2)
+            entry = p["entry_price"]
+            amount = p.get("amount_usdt", 0)
+            sl, tp1, tp2, tp3 = p["sl"], p.get("tp1",0), p.get("tp2",0), p.get("tp3",0)
+            try:
+                px, ch = get_price(sym)
+                pnl = calc_pnl(side, lev, entry, px)
+                pnl_s = "+%.1f" % pnl if pnl >= 0 else "%.1f" % pnl
+                emoji = "\U0001f7e2" if pnl >= 0 else "\U0001f534"
+                to_sl = abs((sl / px - 1) * 100)
+                o.append("*%s* %s %sx  %s (%s) %s %s" % (name, side, lev, F(px), P(ch), emoji, pnl_s+"%"))
+                o.append("`  entry %s  amt $%d" % (F(entry), amount))
+                levels = []
+                if tp1: levels.append("TP1 %s %s" % (F(tp1), dist(px, tp1)))
+                if tp2: levels.append("TP2 %s %s" % (F(tp2), dist(px, tp2)))
+                if tp3: levels.append("TP3 %s" % F(tp3))
+                o.append("  %s  SL %s %s" % (" / ".join(levels), F(sl), dist(px, sl)))
+                if tp1 and px >= tp1: o.append("  >> TP1 HIT - close 30%, SL->entry")
+                if tp2 and px >= tp2: o.append("  >> TP2 HIT - close 50%, trail")
+                if px <= sl: o.append("  >> SL HIT!")
+                elif to_sl < 5: o.append("  \u26a0\ufe0f SL close (%.1f%%)" % to_sl)
+                o.append("")
+            except Exception as e:
+                o.append("%s: %s\n" % (name, e))
+    else:
+        o.append("*POSITIONS* — none\n")
+
+    # WATCHLIST
+    if watchlist:
+        o.append("*WATCHLIST*")
+        o.append("")
+        for w in watchlist:
+            sym = w["symbol"]
+            name = sym.replace("USDT", "")
+            try:
+                px, ch = get_price(sym)
+                o.append("*%s*  %s  %s (%s)" % (name, w.get("direction",""), F(px), P(ch)))
+                if w.get("direction") == "EITHER":
+                    if w.get("entry_long"): o.append("  L>%s TP %s" % (F(w["entry_long"]), F(w.get("tp1_long",""))))
+                    if w.get("entry_short"): o.append("  S<%s TP %s" % (F(w["entry_short"]), F(w.get("tp1_short",""))))
+                else:
+                    if w.get("entry_zone"): o.append("  in %s" % w["entry_zone"])
+                    if w.get("sl"): o.append("  SL %s" % F(w["sl"]))
+                    if w.get("tp1"): o.append("  TP1 %s" % F(w["tp1"]))
+                if w.get("note"): o.append("  > %s" % w["note"])
+                o.append("")
+            except Exception as e:
+                o.append("%s: %s\n" % (name, e))
+
+    o.append("_next in 2h_")
+    msg = "\n".join(o)
+    if len(msg) > 4000: msg = msg[:3950] + "\ntruncated..."
+    send_telegram(msg)
+    print("Sent")
+
+  monitor.py: |
+    """Alert monitor: TP/SL/close-to-SL/big-move. Runs every 5min."""
+    import sys; sys.path.insert(0, "/scripts")
+    from common import *
+    from datetime import datetime
+
+    config = load_config()
+    positions = [p for p in config["positions"] if p.get("status") == "OPEN"]
+    settings = config.get("settings", {}).get("monitor", {})
+    sl_warn = settings.get("sl_warning_pct", 5)
+    sl_danger = settings.get("sl_danger_pct", 3)
+    big_move = settings.get("big_move_pct", 5)
+
+    alerts = []
+    warnings = []
+
+    for p in positions:
+        sym = p["symbol"]
+        name = sym.replace("USDT", "")
+        side = p["side"]
+        lev = p.get("leverage", 2)
+        entry = p["entry_price"]
+        sl = p["sl"]
+        tp1, tp2, tp3 = p.get("tp1",0), p.get("tp2",0), p.get("tp3",0)
+
+        try:
+            px, ch = get_price(sym)
+            pnl = calc_pnl(side, lev, entry, px)
+            to_sl = abs((sl / px - 1) * 100)
+
+            # TP/SL hit check
+            hit = False
+            if side.upper() == "LONG":
+                if tp3 and px >= tp3: alerts.append(">>> TP3 HIT %s %s — close ALL" % (name, F(px))); hit = True
+                elif tp2 and px >= tp2: alerts.append(">> TP2 HIT %s %s — close 50%%" % (name, F(px))); hit = True
+                elif tp1 and px >= tp1: alerts.append("TP1 HIT %s %s — close 30%%, SL->entry" % (name, F(px))); hit = True
+                if px <= sl: alerts.append("SL HIT %s %s — CLOSE! PnL %.1f%%" % (name, F(px), pnl)); hit = True
+            else:
+                if tp2 and px <= tp2: alerts.append(">>> TP2 HIT %s %s — close ALL" % (name, F(px))); hit = True
+                elif tp1 and px <= tp1: alerts.append("TP1 HIT %s %s — close 30%%, SL->entry" % (name, F(px))); hit = True
+                if px >= sl: alerts.append("SL HIT %s %s — CLOSE! PnL %.1f%%" % (name, F(px), pnl)); hit = True
+            if hit: continue
+
+            # Warnings
+            if to_sl < sl_danger:
+                warnings.append("\U0001f534 %s %s — %.1f%% to SL!" % (name, F(px), to_sl))
+            elif to_sl < sl_warn:
+                warnings.append("\u26a0\ufe0f %s %s — %.1f%% to SL" % (name, F(px), to_sl))
+
+            if abs(ch) >= big_move:
+                arrow = "\U0001f534" if (ch < 0 and side.upper()=="LONG") or (ch > 0 and side.upper()=="SHORT") else "\U0001f7e2"
+                warnings.append("%s %s %s — %s 24h" % (arrow, name, F(px), P(ch)))
+
+        except Exception as e:
+            alerts.append("\u26a0\ufe0f %s error: %s" % (name, e))
+
+    now = datetime.utcnow().strftime('%H:%M')
+
+    if alerts:
+        send_telegram("ALERT %s\n\n%s" % (now, "\n".join(alerts)))
+        print("ALERT sent")
+    elif warnings:
+        send_telegram("WARNING %s\n\n%s" % (now, "\n".join(warnings)))
+        print("WARNING sent")
+    else:
+        print("OK - no alerts")

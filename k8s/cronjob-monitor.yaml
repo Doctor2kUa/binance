@@ -1,0 +1,61 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: binance-monitor
+  namespace: function
+spec:
+  schedule: "*/5 * * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 5
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      activeDeadlineSeconds: 60
+      template:
+        spec:
+          restartPolicy: Never
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1000
+            fsGroup: 1000
+            seccompProfile:
+              type: RuntimeDefault
+          containers:
+            - name: monitor
+              image: python:3.11-slim
+              command: ["python", "/app/monitor.py"]
+              securityContext:
+                allowPrivilegeEscalation: false
+                capabilities:
+                  drop: ["ALL"]
+              env:
+                - name: BOT_TOKEN
+                  valueFrom:
+                    secretKeyRef:
+                      name: binance-telegram
+                      key: BOT_TOKEN
+                - name: CHAT_ID
+                  valueFrom:
+                    secretKeyRef:
+                      name: binance-telegram
+                      key: CHAT_ID
+              volumeMounts:
+                - name: scripts
+                  mountPath: /app
+                - name: config
+                  mountPath: /config
+              resources:
+                requests:
+                  cpu: 50m
+                  memory: 64Mi
+                limits:
+                  cpu: 100m
+                  memory: 128Mi
+          volumes:
+            - name: scripts
+              configMap:
+                name: binance-scripts
+            - name: config
+              configMap:
+                name: binance-config

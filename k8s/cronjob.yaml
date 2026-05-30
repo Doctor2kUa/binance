@@ -1,0 +1,56 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: binance-report
+  namespace: function
+spec:
+  schedule: "0 */2 * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      activeDeadlineSeconds: 120
+      template:
+        spec:
+          restartPolicy: Never
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1000
+            fsGroup: 1000
+            seccompProfile:
+              type: RuntimeDefault
+          containers:
+            - name: report
+              image: python:3.11-slim
+              command: ["python", "/app/send_report.py"]
+              securityContext:
+                allowPrivilegeEscalation: false
+                capabilities:
+                  drop: ["ALL"]
+              env:
+                - name: BOT_TOKEN
+                  valueFrom:
+                    secretKeyRef:
+                      name: binance-telegram
+                      key: BOT_TOKEN
+                - name: CHAT_ID
+                  valueFrom:
+                    secretKeyRef:
+                      name: binance-telegram
+                      key: CHAT_ID
+              volumeMounts:
+                - name: scripts
+                  mountPath: /app
+              resources:
+                requests:
+                  cpu: 50m
+                  memory: 64Mi
+                limits:
+                  cpu: 100m
+                  memory: 128Mi
+          volumes:
+            - name: scripts
+              configMap:
+                name: send-report
