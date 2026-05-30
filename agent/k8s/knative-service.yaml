@@ -17,7 +17,6 @@ spec:
     spec:
       containerConcurrency: 10
       timeoutSeconds: 60
-      serviceAccountName: binance-watchlist-agent
       containers:
         - name: agent
           image: ghcr.io/doctor2kua/binance/watchlist-agent:latest

@@ -209,3 +209,10 @@ Deposit: ${deposit}
 3. Рекомендацию: входить или нет
 Будь критичен. Никакого "может взлететь". SL всегда. Ниже B = SKIP.
 """
+
+
+if __name__ == "__main__":
+    import uvicorn
+    port = int(os.getenv("API_PORT", "8000"))
+    host = os.getenv("API_HOST", "0.0.0.0")
+    uvicorn.run(app, host=host, port=port, log_level="info")

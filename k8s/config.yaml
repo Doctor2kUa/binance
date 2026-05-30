@@ -42,62 +42,58 @@ data:
       ],
       "watchlist": [
         {
-          "symbol": "BCHUSDT",
-          "direction": "LONG",
-          "entry_zone": "300-305",
-          "sl": 289,
-          "tp1": 333,
-          "tp2": 383,
-          "note": "RSI 22 OS, bounce trade"
-        },
-        {
-          "symbol": "EDENUSDT",
+          "symbol": "ALLOUSDT",
           "direction": "SHORT",
-          "entry_zone": "0.065",
-          "sl": 0.072,
-          "tp1": 0.047,
-          "tp2": 0.035,
-          "note": "Downtrend, vol 2.85x capitulation"
+          "entry_zone": "0.24-0.26",
+          "sl": 0.28,
+          "tp1": 0.20,
+          "tp2": 0.18,
+          "note": "RSI 85 OB, BB 119%, MACD neg. Short on rejection."
         },
         {
-          "symbol": "TRUMPUSDT",
-          "direction": "SHORT_ONLY",
-          "entry_zone": "1.96",
-          "sl": 2.08,
-          "tp1": 1.70,
-          "tp2": 1.50,
-          "note": "Short only. Memecoin. SL tight at +6%."
+          "symbol": "BANANAS31USDT",
+          "direction": "SKIP",
+          "entry_zone": "n/a",
+          "sl": 0,
+          "tp1": 0,
+          "tp2": 0,
+          "note": "Memecoin. Low vol 0.3x. SKIP."
         },
         {
-          "symbol": "HOMEUSDT",
+          "symbol": "ADAUSDT",
           "direction": "LONG",
-          "entry_zone": "0.020-0.024",
-          "sl": 0.020,
-          "tp1": 0.031,
-          "tp2": 0.035,
-          "note": "RSI 84 OB, wait pullback"
+          "entry_zone": "0.20-0.22",
+          "sl": 0.19,
+          "tp1": 0.26,
+          "tp2": 0.28,
+          "note": "RSI 39, BB 24%. Wait pullback to 0.20-0.22. SMA above price."
+        },
+        {
+          "symbol": "NEARUSDT",
+          "direction": "SHORT",
+          "entry_zone": "2.30-2.40",
+          "sl": 2.55,
+          "tp1": 2.00,
+          "tp2": 1.80,
+          "note": "RSI 64, MACD neg, -7.5% today. Short on continuation."
         },
         {
           "symbol": "DASHUSDT",
-          "direction": "EITHER",
-          "entry_long": 42,
-          "sl_long": 38,
-          "tp1_long": 47,
-          "tp2_long": 54,
-          "entry_short": 39,
-          "sl_short": 42,
-          "tp1_short": 33,
-          "tp2_short": 30,
-          "note": "Wait breakout. L>42 / S<39."
+          "direction": "LONG",
+          "entry_zone": "36-38",
+          "sl": 34,
+          "tp1": 42,
+          "tp2": 45,
+          "note": "RSI 44, BB 18%, MACD+. Wait pullback."
         },
         {
           "symbol": "ALGOUSDT",
-          "direction": "LONG",
-          "entry_zone": "0.110-0.114",
-          "sl": 0.104,
-          "tp1": 0.126,
-          "tp2": 0.137,
-          "note": "Bullish trend, wait pullback for entry"
+          "direction": "SKIP",
+          "entry_zone": "n/a",
+          "sl": 0,
+          "tp1": 0,
+          "tp2": 0,
+          "note": "No clear setup. Monitor."
         }
       ],
       "settings": {
@@ -113,5 +109,5 @@ data:
           "show_watchlist": true
         }
       },
-      "last_updated": "2026-05-30T13:00:00Z"
+      "last_updated": "2026-05-30T19:30:00Z"
     }
