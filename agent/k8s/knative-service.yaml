@@ -19,7 +19,7 @@ spec:
       timeoutSeconds: 60
       containers:
         - name: agent
-          image: ghcr.io/doctor2kua/binance/watchlist-agent:latest
+          image: registry.digitalocean.com/gart-tech-core-registry/binance-watchlist-agent:latest
           ports:
             - containerPort: 8000
               protocol: TCP
