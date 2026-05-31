@@ -14,7 +14,7 @@ BASE = "https://fapi.binance.com"
 
 # ─── STEP 1: Получение данных ────────────────────────────────────────
 
-async def fetch_json(url: str, params: dict = None) -> dict | list:
+async def fetch_json(url: str, params: dict = None):
     async with httpx.AsyncClient(timeout=10) as client:
         r = await client.get(url, params=params)
         r.raise_for_status()
