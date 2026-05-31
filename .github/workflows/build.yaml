@@ -14,19 +14,15 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      packages: write
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Install doctl
-        uses: digitalocean/action-doctl@v2
-        with:
-          token: ${{ secrets.DO_API_TOKEN }}
-
       - name: Login to DO Registry
-        run: doctl registry login --expiry-seconds 600
+        run: |
+          echo '${{ secrets.DO_DOCKER_CONFIG }}' > /tmp/docker-config.json
+          cat /tmp/docker-config.json | docker login registry.digitalocean.com --username json_key --password-stdin
 
       - name: Docker meta
         id: meta
