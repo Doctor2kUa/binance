@@ -21,8 +21,7 @@ jobs:
 
       - name: Login to DO Registry
         run: |
-          echo '${{ secrets.DO_DOCKER_CONFIG }}' > /tmp/docker-config.json
-          cat /tmp/docker-config.json | docker login registry.digitalocean.com --username json_key --password-stdin
+          echo "${{ secrets.DO_API_TOKEN }}" | docker login registry.digitalocean.com --username roman.devops@gart.tech --password-stdin
 
       - name: Docker meta
         id: meta
