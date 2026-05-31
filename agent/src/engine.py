@@ -1,6 +1,6 @@
 """
-engine.py — Watchlist Analysis Engine
-Реализация WATCHLIST_INSTRUCTION.md шаги 1-9
+engine.py — Watchlist Analysis Engine v2
+Полный анализ для LONG и SHORT направлений.
 
 ВСЕ данные из публичного Binance Futures API.
 Никаких API-ключей не нужны. Rate limit: 1200 req/min.
@@ -22,12 +22,10 @@ async def fetch_json(url: str, params: dict = None) -> dict | list:
 
 
 async def get_ticker(symbol: str) -> dict:
-    """24hr ticker"""
     return await fetch_json(f"{BASE}/fapi/v1/ticker/24hr", {"symbol": f"{symbol}USDT"})
 
 
 async def get_klines(symbol: str, interval: str = "1d", limit: int = 100) -> list:
-    """Свечные данные"""
     return await fetch_json(
         f"{BASE}/fapi/v1/klines",
         {"symbol": f"{symbol}USDT", "interval": interval, "limit": limit},
@@ -35,7 +33,6 @@ async def get_klines(symbol: str, interval: str = "1d", limit: int = 100) -> lis
 
 
 def parse_klines(klines: list) -> dict:
-    """Из klines извлекает close, high, low, volume"""
     return {
         "close": [float(k[4]) for k in klines],
         "high": [float(k[2]) for k in klines],
@@ -63,17 +60,9 @@ def ema(data: list, period: int) -> list:
     return result
 
 
-def calc_ema(data: list, period: int) -> float:
-    """Последнее значение EMA"""
-    result = ema(data, period)
-    return result[-1]
-
-
 def calc_macd(close: list) -> tuple:
-    """Возвращает (macd_line_last, signal_line_last, histogram_last)"""
     ema12 = ema(close, 12)
     ema26 = ema(close, 26)
-    # Выравниваем: EMA12 длиннее, обрезаем начало
     offset = len(ema12) - len(ema26)
     macd_line = [ema12[offset + i] - ema26[i] for i in range(len(ema26))]
     if len(macd_line) < 9:
@@ -102,7 +91,6 @@ def calc_rsi(close: list, period: int = 14) -> float:
 
 
 def calc_bb(close: list, period: int = 20, std_mult: float = 2.0) -> tuple:
-    """Возвращает (upper, middle, lower, bb_position_pct)"""
     if len(close) < period:
         m = close[-1]
         return m, m, m, 50.0
@@ -133,31 +121,20 @@ def calc_atr(high: list, low: list, close: list, period: int = 14) -> float:
 
 
 def calc_momentum(close: list) -> tuple:
-    """7d и 30d momentum в %"""
     mom_7d = (close[-1] / close[-8] - 1) * 100 if len(close) >= 8 else 0.0
     mom_30d = (close[-1] / close[-31] - 1) * 100 if len(close) >= 31 else 0.0
     return mom_7d, mom_30d
 
 
 def calc_volume_analysis(volume: list, close: list, period: int = 20) -> tuple:
-    """avg_vol в USDT, vol_ratio"""
     if len(volume) < period:
         return 0.0, 1.0
-    # volume в USDT = volume * close_price
     vol_usdt = [volume[i] * close[i] for i in range(len(volume))]
     avg_vol = sum(vol_usdt[-period:]) / period
     return avg_vol, volume[-1] * close[-1] / avg_vol if avg_vol > 0 else 1.0
 
 
-def calc_ath_atl(high: list, low: list, price: float) -> tuple:
-    ath = max(high)
-    atl = min(low)
-    drop_ath = (price / ath - 1) * 100 if ath > 0 else 0.0
-    return ath, atl, drop_ath
-
-
 def pearson_correlation(x: list, y: list) -> float:
-    """Корреляция Пирсона между двумя списками одинаковой длины"""
     n = min(len(x), len(y))
     if n < 3:
         return 0.0
@@ -176,7 +153,7 @@ def pearson_correlation(x: list, y: list) -> float:
 # ─── MEMECOIN LIST ───────────────────────────────────────────────────
 
 MEMECOINS = {
-    "DOGE", "SHIB", "PEPE", "FLOKI", "BONK", "WIF", "SATS", "FLOKI",
+    "DOGE", "SHIB", "PEPE", "FLOKI", "BONK", "WIF", "SATS",
     "BOME", "MEME", "TURBO", "LADYS", "VRA", "TRUMP", "MAGA",
 }
 
@@ -192,139 +169,140 @@ def count_signals(price, rsi_val, bb_pos, macd_hist, sma_vals, mom_7d, vol_ratio
     """Суммирует бычьи (+1) и медвежьи (-1) сигналы. Макс +6 / мин -6."""
     score = 0
     # Бычье
-    if rsi_val < 35:
-        score += 1
-    if bb_pos < 30:
-        score += 1
-    if macd_hist > 0:
-        score += 1
-    if price > sma_vals[2]:  # SMA50
-        score += 1
-    if mom_7d < -5:
-        score += 1
-    if vol_ratio > 1.2:
-        score += 1
+    if rsi_val < 35: score += 1
+    if bb_pos < 30: score += 1
+    if macd_hist > 0: score += 1
+    if price > sma_vals[2]: score += 1
+    if mom_7d < -5: score += 1
+    if vol_ratio > 1.2: score += 1
     # Медвежье
-    if rsi_val > 65:
-        score -= 1
-    if bb_pos > 70:
-        score -= 1
-    if macd_hist < 0:
-        score -= 1
-    if price < sma_vals[2]:
-        score -= 1
-    if mom_7d > 10:
-        score -= 1
-    if vol_ratio < 0.5:
-        score -= 1
+    if rsi_val > 65: score -= 1
+    if bb_pos > 70: score -= 1
+    if macd_hist < 0: score -= 1
+    if price < sma_vals[2]: score -= 1
+    if mom_7d > 10: score -= 1
+    if vol_ratio < 0.5: score -= 1
     return score
 
 
 def get_direction(signals_sum: int) -> str:
+    """Возвращает LONG, SHORT или SKIP."""
     if signals_sum >= 3:
         return "LONG"
-    elif signals_sum <= -2:
-        return "SKIP_BEAR"
+    elif signals_sum <= -3:
+        return "SHORT"
     else:
-        return "SKIP_NUTRAL"
+        return "SKIP"
 
 
-# ─── STEP 4: Entry Quality Score ─────────────────────────────────────
+# ─── STEP 4: Entry Quality Score (с поддержкой direction) ────────────
 
-def score_rsi(rsi_val: float) -> int:
-    if rsi_val < 20:
-        return 20
-    elif rsi_val < 30:
-        return 18
-    elif rsi_val < 40:
-        return 14
-    elif rsi_val < 45:
-        return 10
-    elif rsi_val < 55:
-        return 5
-    else:
+def score_rsi(rsi_val: float, direction: str = "LONG") -> int:
+    if direction == "LONG":
+        if rsi_val < 20: return 20
+        elif rsi_val < 30: return 18
+        elif rsi_val < 40: return 14
+        elif rsi_val < 45: return 10
+        elif rsi_val < 55: return 5
+        else: return 0
+    else:  # SHORT
+        if rsi_val > 80: return 20
+        elif rsi_val > 70: return 18
+        elif rsi_val > 60: return 14
+        elif rsi_val > 55: return 10
+        elif rsi_val > 45: return 5
+        else: return 0
+
+
+def score_bb(bb_pos: float, direction: str = "LONG") -> int:
+    if direction == "LONG":
+        if bb_pos < 10: return 20
+        elif bb_pos < 20: return 18
+        elif bb_pos < 30: return 14
+        elif bb_pos < 40: return 8
+        elif bb_pos < 50: return 4
+        else: return 0
+    else:  # SHORT
+        if bb_pos > 90: return 20
+        elif bb_pos > 80: return 18
+        elif bb_pos > 70: return 14
+        elif bb_pos > 60: return 8
+        elif bb_pos > 50: return 4
+        else: return 0
+
+
+def score_macd(macd_norm: float, price: float, direction: str = "LONG") -> int:
+    if direction == "LONG":
+        if price > 10:
+            thresholds = [(3.0, 20), (2.0, 16), (1.0, 12), (0.5, 8), (0.0, 4)]
+        elif price > 1:
+            thresholds = [(6.0, 20), (4.0, 16), (2.0, 12), (1.0, 8), (0.0, 4)]
+        else:
+            thresholds = [(15.0, 20), (10.0, 16), (5.0, 12), (2.0, 8), (0.0, 4)]
+        for t, s in thresholds:
+            if macd_norm > t:
+                return s
         return 0
-
-
-def score_bb(bb_pos: float) -> int:
-    if bb_pos < 10:
-        return 20
-    elif bb_pos < 20:
-        return 18
-    elif bb_pos < 30:
-        return 14
-    elif bb_pos < 40:
-        return 8
-    elif bb_pos < 50:
-        return 4
-    else:
+    else:  # SHORT — инвертировать
+        if price > 10:
+            thresholds = [(-3.0, 20), (-2.0, 16), (-1.0, 12), (-0.5, 8), (0.0, 4)]
+        elif price > 1:
+            thresholds = [(-6.0, 20), (-4.0, 16), (-2.0, 12), (-1.0, 8), (0.0, 4)]
+        else:
+            thresholds = [(-15.0, 20), (-10.0, 16), (-5.0, 12), (-2.0, 8), (0.0, 4)]
+        for t, s in thresholds:
+            if macd_norm < t:
+                return s
         return 0
-
-
-def score_macd(macd_norm: float, price: float) -> int:
-    if price > 10:
-        thresholds = [(3.0, 20), (2.0, 16), (1.0, 12), (0.5, 8), (0.0, 4)]
-    elif price > 1:
-        thresholds = [(6.0, 20), (4.0, 16), (2.0, 12), (1.0, 8), (0.0, 4)]
-    else:
-        thresholds = [(15.0, 20), (10.0, 16), (5.0, 12), (2.0, 8), (0.0, 4)]
-    for t, s in thresholds:
-        if macd_norm > t:
-            return s
-    return 0
 
 
 def score_volume(vol_ratio: float) -> int:
-    if vol_ratio > 2.0:
-        return 15
-    elif vol_ratio > 1.5:
-        return 13
-    elif vol_ratio > 1.2:
-        return 10
-    elif vol_ratio > 0.8:
-        return 7
-    elif vol_ratio > 0.5:
-        return 3
-    else:
-        return 0
+    if vol_ratio > 2.0: return 15
+    elif vol_ratio > 1.5: return 13
+    elif vol_ratio > 1.2: return 10
+    elif vol_ratio > 0.8: return 7
+    elif vol_ratio > 0.5: return 3
+    else: return 0
 
 
-def score_sma_trend(price: float, sma_vals: list) -> int:
-    above = sum(1 for s in sma_vals if price > s)
-    if above == 3:
-        return 15
-    elif above == 2:
-        return 11
-    elif above == 1:
-        return 5
-    else:
-        return 0
+def score_sma_trend(price: float, sma_vals: list, direction: str = "LONG") -> int:
+    if direction == "LONG":
+        above = sum(1 for s in sma_vals if price > s)
+        if above == 3: return 15
+        elif above == 2: return 11
+        elif above == 1: return 5
+        else: return 0
+    else:  # SHORT
+        below = sum(1 for s in sma_vals if price < s)
+        if below == 3: return 15
+        elif below == 2: return 11
+        elif below == 1: return 5
+        else: return 0
 
 
-def score_momentum(mom_7d: float) -> int:
-    if mom_7d < -20:
-        return 10
-    elif mom_7d < -15:
-        return 8
-    elif mom_7d < -10:
-        return 6
-    elif mom_7d < -5:
-        return 3
-    elif mom_7d < 0:
-        return 1
-    else:
-        return 0
+def score_momentum(mom_7d: float, direction: str = "LONG") -> int:
+    if direction == "LONG":
+        if mom_7d < -20: return 10
+        elif mom_7d < -15: return 8
+        elif mom_7d < -10: return 6
+        elif mom_7d < -5: return 3
+        elif mom_7d < 0: return 1
+        else: return 0
+    else:  # SHORT
+        if mom_7d > 20: return 10
+        elif mom_7d > 15: return 8
+        elif mom_7d > 10: return 6
+        elif mom_7d > 5: return 3
+        elif mom_7d > 0: return 1
+        else: return 0
 
 
-# ─── STEP ШТРАФЫ ─────────────────────────────────────────────────────
+# ─── STEP 5: Штрафы ──────────────────────────────────────────────────
 
-def calc_penalties(
-    price, rsi_val, bb_pos, macd_hist, mom_7d,
-    vol_ratio, avg_vol_usdt, atr, atr_pct,
-    symbol: str,
-) -> list:
+def calc_penalties(price, rsi_val, bb_pos, macd_hist, mom_7d,
+                   vol_ratio, avg_vol_usdt, atr, atr_pct, symbol: str) -> list:
     p = []
-    # Memecoin
+    # Memecoin — штраф, не блокировка
     if is_memecoin(symbol):
         p.append(("Memecoin Penalty", -20))
     # Low liquidity
@@ -333,13 +311,13 @@ def calc_penalties(
     # Extreme ATR
     if atr_pct > 15:
         p.append(("Extreme ATR", -10))
-    # Already run
+    # Already run — только штраф, не блокировка
     if mom_7d > 25:
         p.append(("Already Run", -15))
     # Dead zone
     if 40 < rsi_val < 55 and 40 < bb_pos < 60 and abs(macd_hist) < 0.001 * price:
         p.append(("Dead Zone", -10))
-    # Penalty MOM_7d > 15%
+    # Momentum run — штраф для лонга
     if mom_7d > 15:
         p.append(("Momentum Run", -5))
     return p
@@ -348,49 +326,47 @@ def calc_penalties(
 # ─── STEP 6: Рейтинг ─────────────────────────────────────────────────
 
 def score_to_rating(score: int) -> str:
-    if score >= 80:
-        return "A"
-    elif score >= 65:
-        return "B"
-    elif score >= 50:
-        return "C"
-    elif score >= 35:
-        return "D"
-    else:
-        return "F"
+    if score >= 80: return "A"
+    elif score >= 65: return "B"
+    elif score >= 50: return "C"
+    elif score >= 35: return "D"
+    else: return "F"
 
 
-# ─── STEP 7: Параметры входа ─────────────────────────────────────────
+# ─── STEP 7: Параметры входа (LONG + SHORT) ──────────────────────────
 
-def calc_entry_params(price, atr, deposit: float = 1000.0, amount: float = 10.0) -> dict:
+def calc_entry_params(price, atr, direction: str = "LONG",
+                      deposit: float = 1000.0, amount: float = 10.0) -> dict:
     risk = deposit * 0.02
-    sl = price - atr * 1.5
-    sl_pct = abs(price - sl) / price * 100
-    if sl_pct < 3:
-        sl = price * 0.97
-    elif sl_pct > 15:
-        sl = price * 0.85
 
-    sl_dist = price - sl
+    if direction == "LONG":
+        sl = price - atr * 1.5
+        sl_pct = abs(price - sl) / price * 100
+        if sl_pct < 3: sl = price * 0.97
+        elif sl_pct > 15: sl = price * 0.85
+        sl_dist = price - sl
+        tp1 = price + sl_dist * 1.5
+        tp2 = price + sl_dist * 2.5
+        tp3 = price + sl_dist * 4.0
+    else:  # SHORT
+        sl = price + atr * 1.5
+        sl_pct = abs(sl - price) / price * 100
+        if sl_pct < 3: sl = price * 1.03
+        elif sl_pct > 15: sl = price * 1.15
+        sl_dist = sl - price
+        tp1 = price - sl_dist * 1.5
+        tp2 = price - sl_dist * 2.5
+        tp3 = price - sl_dist * 4.0
+
     pos_value = risk / (sl_dist / price) if sl_dist > 0 else 0
-    if pos_value < 10:
-        pos_value = 10
-    if pos_value > deposit * 0.5:
-        pos_value = deposit * 0.5
-
+    if pos_value < 10: pos_value = 10
+    if pos_value > deposit * 0.5: pos_value = deposit * 0.5
     leverage = max(1, min(5, round(pos_value / amount)))
-    if leverage > 5:
-        leverage = 5
-        pos_value = amount * leverage
-
-    tp1 = price + sl_dist * 1.5
-    tp2 = price + sl_dist * 2.5
-    tp3 = price + sl_dist * 4.0
 
     return {
         "entry": round(price, 6),
         "sl": round(sl, 6),
-        "sl_pct": round(abs(price - sl) / price * 100, 1),
+        "sl_pct": round(sl_pct, 1),
         "tp1": round(tp1, 6),
         "tp1_pct": round((tp1 / price - 1) * 100, 1),
         "tp2": round(tp2, 6),
@@ -404,41 +380,31 @@ def calc_entry_params(price, atr, deposit: float = 1000.0, amount: float = 10.0)
     }
 
 
-# ─── STEP 8: Danger Score ────────────────────────────────────────────
+# ─── STEP 8: Danger Score (LONG + SHORT) ─────────────────────────────
 
-def calc_danger_score(
-    price, rsi_val, bb_pos, macd_hist,
-    mom_7d, vol_ratio, sma7, sma20, sma50,
-) -> int:
+def calc_danger_score(price, rsi_val, bb_pos, macd_hist, mom_7d, vol_ratio,
+                      sma7, sma20, sma50, direction: str = "LONG") -> int:
     d = 0
-    if rsi_val > 60:
-        d += 25
-    if rsi_val < 20:
-        d += 20
-    if bb_pos < 10:
-        d += 20
-    if macd_hist < 0:
-        d += 15
-    if price < sma20:
-        d += 10
-    if price < sma50:
-        d += 10
-    if mom_7d > 20:
-        d += 10
-    if mom_7d < -20:
-        d += 15
-    if vol_ratio < 0.5:
-        d += 5
+    if rsi_val > 60: d += 25
+    if rsi_val < 20: d += 20
+    if bb_pos > 90: d += 20
+    if bb_pos < 10: d += 20
+    if macd_hist < 0 and direction == "LONG": d += 15
+    if macd_hist > 0 and direction == "SHORT": d += 15
+    if price < sma20 and direction == "LONG": d += 10
+    if price > sma20 and direction == "SHORT": d += 10
+    if price < sma50 and direction == "LONG": d += 10
+    if price > sma50 and direction == "SHORT": d += 10
+    if mom_7d > 20: d += 10
+    if mom_7d < -20: d += 15
+    if vol_ratio < 0.5: d += 5
     return min(d, 100)
 
 
 def danger_level(score: int) -> str:
-    if score < 30:
-        return "LOW"
-    elif score < 60:
-        return "MEDIUM"
-    else:
-        return "HIGH"
+    if score < 30: return "LOW"
+    elif score < 60: return "MEDIUM"
+    else: return "HIGH"
 
 
 # ─── ОСНОВНОЙ PIPELINE ───────────────────────────────────────────────
@@ -450,20 +416,10 @@ async def analyze_coin(
     btc_correlation: bool = True,
 ) -> dict:
     """
-    Полный анализ одной монеты. Возвращает dict с результатами.
+    Полный анализ одной монеты. Считает score для LONG и SHORT,
+    выбирает лучшее направление.
     """
     sym = symbol.upper().replace("USDT", "")
-
-    # CHECK: memecoin → auto SKIP
-    if is_memecoin(sym):
-        return {
-            "symbol": f"{sym}/USDT",
-            "skip": True,
-            "skip_reason": "Memecoin — auto SKIP",
-            "direction": "SKIP",
-            "rating": "F",
-            "score": 0,
-        }
 
     # BTC momentum check
     btc_data = None
@@ -489,18 +445,6 @@ async def analyze_coin(
     data = parse_klines(klines)
     price = data["close"][-1]
 
-    # Don't chase train
-    mom_7d, mom_30d = calc_momentum(data["close"])
-    if mom_7d > 20:
-        return {
-            "symbol": f"{sym}/USDT",
-            "skip": True,
-            "skip_reason": f"Already ran MOM_7d=+{mom_7d:.1f}%, don't chase",
-            "direction": "SKIP",
-            "rating": "F",
-            "score": 0,
-        }
-
     # Indicators
     sma7 = sma(data["close"], 7)
     sma20 = sma(data["close"], 20)
@@ -510,100 +454,81 @@ async def analyze_coin(
     bb_upper, bb_middle, bb_lower, bb_pos = calc_bb(data["close"])
     atr = calc_atr(data["high"], data["low"], data["close"])
     atr_pct = atr / price * 100 if price > 0 else 0
+    mom_7d, mom_30d = calc_momentum(data["close"])
     avg_vol, vol_ratio = calc_volume_analysis(data["volume"], data["close"])
     ath, atl, drop_ath = calc_ath_atl(data["high"], data["low"], price)
 
     # BTC correlation
     btc_corr = None
     if btc_data:
-        btc_corr = pearson_correlation(
-            data["close"][-30:], btc_data["close"][-30:]
-        )
+        btc_corr = pearson_correlation(data["close"][-30:], btc_data["close"][-30:])
 
-    # Direction
+    # Signals count
     signals_sum = count_signals(price, rsi, bb_pos, macd_hist, [sma7, sma20, sma50], mom_7d, vol_ratio)
-    direction = get_direction(signals_sum)
 
-    # Entry score
+    # ─── Score для обоих направлений ───
     macd_norm = macd_hist / price * 100 if price > 0 else 0
-    sc_rsi = score_rsi(rsi)
-    sc_bb = score_bb(bb_pos)
-    sc_macd = score_macd(macd_norm, price)
-    sc_vol = score_volume(vol_ratio)
-    sc_sma = score_sma_trend(price, [sma7, sma20, sma50])
-    sc_mom = score_momentum(mom_7d)
-    raw_score = sc_rsi + sc_bb + sc_macd + sc_vol + sc_sma + sc_mom
 
-    # Penalties
+    long_score = (
+        score_rsi(rsi, "LONG") +
+        score_bb(bb_pos, "LONG") +
+        score_macd(macd_norm, price, "LONG") +
+        score_volume(vol_ratio) +
+        score_sma_trend(price, [sma7, sma20, sma50], "LONG") +
+        score_momentum(mom_7d, "LONG")
+    )
+
+    short_score = (
+        score_rsi(rsi, "SHORT") +
+        score_bb(bb_pos, "SHORT") +
+        score_macd(macd_norm, price, "SHORT") +
+        score_volume(vol_ratio) +
+        score_sma_trend(price, [sma7, sma20, sma50], "SHORT") +
+        score_momentum(mom_7d, "SHORT")
+    )
+
+    # Penalties (одинаковые для обоих)
     penalties = calc_penalties(
         price, rsi, bb_pos, macd_hist, mom_7d,
         vol_ratio, avg_vol, atr, atr_pct, sym,
     )
     total_penalty = sum(p[1] for p in penalties)
-    final_score = max(0, min(100, raw_score + total_penalty))
+
+    long_final = max(0, min(100, long_score + total_penalty))
+    short_final = max(0, min(100, short_score + total_penalty))
+
+    # Блокировка: недостаточно сигналов
+    if signals_sum < 3:
+        long_final = min(long_final, 49)  # Force SKIP для лонга
+    if signals_sum > -3:
+        short_final = min(short_final, 49)  # Force SKIP для шорта
+
+    # Выбираем лучшее направление
+    if long_final >= short_final:
+        final_score = long_final
+        direction = "LONG"
+    else:
+        final_score = short_final
+        direction = "SHORT"
 
     rating = score_to_rating(final_score)
-    danger = calc_danger_score(price, rsi, bb_pos, macd_hist, mom_7d, vol_ratio, sma7, sma20, sma50)
+
+    # Danger score для выбранного направления
+    danger = calc_danger_score(
+        price, rsi, bb_pos, macd_hist, mom_7d, vol_ratio,
+        sma7, sma20, sma50, direction
+    )
     dl = danger_level(danger)
 
-    # Skip if below B
-    if rating in ("C", "D", "F"):
-        reasons = [p[0] for p in penalties if p[1] < 0]
-        if direction == "SKIP_BEAR":
-            reasons.insert(0, "Bearish signals > bullish")
-        elif direction == "SKIP_NUTRAL":
-            reasons.insert(0, "No clear direction")
-        reasons.append(f"Score {final_score}/100 below B threshold (65)")
-        return {
-            "symbol": f"{sym}/USDT",
-            "price": price,
-            "skip": True,
-            "skip_reason": "; ".join(reasons),
-            "direction": direction if direction.startswith("SKIP") else "SKIP",
-            "rating": rating,
-            "score": final_score,
-            "danger": dl,
-            "danger_score": danger,
-            "indicators": {
-                "rsi": round(rsi, 1),
-                "bb_pos": round(bb_pos, 1),
-                "macd_hist": round(macd_hist, 6),
-                "mom_7d": round(mom_7d, 1),
-                "mom_30d": round(mom_30d, 1),
-                "vol_ratio": round(vol_ratio, 2),
-                "sma7": round(sma7, 4),
-                "sma20": round(sma20, 4),
-                "sma50": round(sma50, 4),
-                "atr": round(atr, 4),
-                "atr_pct": round(atr_pct, 1),
-                "btc_correlation": round(btc_corr, 3) if btc_corr else None,
-            },
-            "score_breakdown": {
-                "rsi": sc_rsi,
-                "bb": sc_bb,
-                "macd": sc_macd,
-                "volume": sc_vol,
-                "sma_trend": sc_sma,
-                "momentum": sc_mom,
-                "raw": raw_score,
-                "penalties": {p[0]: p[1] for p in penalties},
-                "final": final_score,
-            },
-        }
-
-    # Rating A or B → calculate entry params
-    params = calc_entry_params(price, atr, deposit, amount)
-
-    return {
+    # Формируем результат
+    result = {
         "symbol": f"{sym}/USDT",
         "price": price,
-        "skip": False,
         "direction": direction,
         "rating": rating,
         "score": final_score,
         "danger": dl,
         "danger_score": danger,
-        "entry_params": params,
         "indicators": {
             "rsi": round(rsi, 1),
             "bb_pos": round(bb_pos, 1),
@@ -619,14 +544,39 @@ async def analyze_coin(
             "btc_correlation": round(btc_corr, 3) if btc_corr else None,
         },
         "score_breakdown": {
-            "rsi": sc_rsi,
-            "bb": sc_bb,
-            "macd": sc_macd,
-            "volume": sc_vol,
-            "sma_trend": sc_sma,
-            "momentum": sc_mom,
-            "raw": raw_score,
+            "long": {
+                "rsi": score_rsi(rsi, "LONG"),
+                "bb": score_bb(bb_pos, "LONG"),
+                "macd": score_macd(macd_norm, price, "LONG"),
+                "volume": score_volume(vol_ratio),
+                "sma_trend": score_sma_trend(price, [sma7, sma20, sma50], "LONG"),
+                "momentum": score_momentum(mom_7d, "LONG"),
+                "raw": long_score,
+                "final": long_final,
+            },
+            "short": {
+                "rsi": score_rsi(rsi, "SHORT"),
+                "bb": score_bb(bb_pos, "SHORT"),
+                "macd": score_macd(macd_norm, price, "SHORT"),
+                "volume": score_volume(vol_ratio),
+                "sma_trend": score_sma_trend(price, [sma7, sma20, sma50], "SHORT"),
+                "momentum": score_momentum(mom_7d, "SHORT"),
+                "raw": short_score,
+                "final": short_final,
+            },
             "penalties": {p[0]: p[1] for p in penalties},
-            "final": final_score,
+            "total_penalty": total_penalty,
         },
     }
+
+    # SKIP если рейтинг ниже B
+    if rating in ("C", "D", "F"):
+        result["skip"] = True
+        result["skip_reason"] = f"Score {final_score}/100 below B threshold (65)"
+        return result
+
+    # Rating A или B — считаем entry params
+    result["skip"] = False
+    result["entry_params"] = calc_entry_params(price, atr, direction, deposit, amount)
+
+    return result
