@@ -28,6 +28,25 @@ OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY", "")
 OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions"
 HERMES_MODEL = os.getenv("HERMES_MODEL", "openrouter/owl-alpha")
 
+API_KEY = os.getenv("API_KEY", "")
+
+
+# ─── API Key Auth ─────────────────────────────────────────────────────
+
+from fastapi import Depends, HTTPException, status
+from fastapi.security import APIKeyHeader
+
+api_key_header = APIKeyHeader(name="X-API-KEY", auto_error=False)
+
+
+async def verify_api_key(key: str = Depends(api_key_header)):
+    if API_KEY and key != API_KEY:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Invalid API key",
+        )
+    return key
+
 
 # ─── Models ───────────────────────────────────────────────────────────
 
@@ -60,7 +79,7 @@ async def health():
     return {"status": "ok", "version": "1.0.0"}
 
 
-@app.post("/analyze")
+@app.post("/analyze", dependencies=[Depends(verify_api_key)])
 async def analyze(req: AnalyzeRequest):
     """Анализ одной монеты — сырые данные + скоринг"""
     try:
@@ -71,7 +90,7 @@ async def analyze(req: AnalyzeRequest):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@app.post("/batch")
+@app.post("/batch", dependencies=[Depends(verify_api_key)])
 async def batch_analyze(req: BatchRequest):
     """Анализ нескольких монет (watchlist)"""
     import httpx
@@ -87,7 +106,7 @@ async def batch_analyze(req: BatchRequest):
     return {"results": results, "count": len(results)}
 
 
-@app.post("/hermes")
+@app.post("/hermes", dependencies=[Depends(verify_api_key)])
 async def hermes_analyze(req: HermesRequest):
     """
     Полный анализ с LLM-вердиктом:

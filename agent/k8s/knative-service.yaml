@@ -14,6 +14,7 @@ spec:
         autoscaling.knative.dev/minScale: "0"
         autoscaling.knative.dev/maxScale: "3"
         autoscaling.knative.dev/targetConcurrency: "5"
+        networking.knative.dev/visibility: cluster-local
     spec:
       containerConcurrency: 10
       timeoutSeconds: 60
@@ -43,6 +44,11 @@ spec:
                 secretKeyRef:
                   name: binance-watchlist-secrets
                   key: CHAT_ID
+            - name: API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: binance-watchlist-secrets
+                  key: API_KEY
           securityContext:
             allowPrivilegeEscalation: false
             capabilities:
