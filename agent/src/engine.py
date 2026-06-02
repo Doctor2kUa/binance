@@ -125,13 +125,20 @@ def calc_momentum(close: list) -> tuple:
     mom_30d = (close[-1] / close[-31] - 1) * 100 if len(close) >= 31 else 0.0
     return mom_7d, mom_30d
 
-
 def calc_volume_analysis(volume: list, close: list, period: int = 20) -> tuple:
+    """avg_vol в USDT, vol_ratio"""
     if len(volume) < period:
         return 0.0, 1.0
     vol_usdt = [volume[i] * close[i] for i in range(len(volume))]
     avg_vol = sum(vol_usdt[-period:]) / period
     return avg_vol, volume[-1] * close[-1] / avg_vol if avg_vol > 0 else 1.0
+
+
+def calc_ath_atl(high: list, low: list, price: float) -> tuple:
+    ath = max(high)
+    atl = min(low)
+    drop_ath = (price / ath - 1) * 100 if ath > 0 else 0.0
+    return ath, atl, drop_ath
 
 
 def pearson_correlation(x: list, y: list) -> float:

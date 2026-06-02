@@ -1,0 +1,169 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: binance-config
+  namespace: function
+data:
+  # ═══ ЕДИНАЯ БАЗА ДАННЫХ ═══
+  # Все изменения позиций/watchlist делаются здесь
+  # Применить: kubectl apply -f k8s/config.yaml
+
+  positions.json: |
+    {
+      "positions": [
+        {
+          "symbol": "ZECUSDT",
+          "side": "LONG",
+          "type": "FUTURES",
+          "leverage": 2,
+          "opened_at": "2026-05-29",
+          "entry_price": 542,
+          "amount_usdt": 10,
+          "sl": 440,
+          "tp1": 575,
+          "tp2": 580,
+          "tp3": 689,
+          "status": "CLOSED",
+          "closed_at": "2026-05-31",
+          "close_price": 544,
+          "pnl_usd": 0.37
+        },
+        {
+          "symbol": "BCHUSDT",
+          "side": "LONG",
+          "type": "FUTURES",
+          "leverage": 2,
+          "opened_at": "2026-05-29",
+          "entry_price": 300,
+          "amount_usdt": 10,
+          "sl": 289,
+          "tp1": 333,
+          "tp2": 383,
+          "tp3": 422,
+          "status": "CLOSED",
+          "closed_at": "2026-05-31",
+          "close_price": 299,
+          "pnl_usd": -0.33
+        },
+        {
+          "symbol": "ALLOUSDT",
+          "side": "SHORT",
+          "type": "FUTURES",
+          "leverage": 2,
+          "opened_at": "2026-05-31",
+          "entry_price": 0.329,
+          "amount_usdt": 10,
+          "sl": 0.375,
+          "tp1": 0.253,
+          "tp2": 0.204,
+          "tp3": 0.131,
+          "status": "CLOSED",
+          "closed_at": "2026-05-31",
+          "close_price": 0.28,
+          "pnl_usd": 0
+        },
+        {
+          "symbol": "ALLOUSDT",
+          "side": "SHORT",
+          "type": "FUTURES",
+          "leverage": 2,
+          "opened_at": "2026-05-31",
+          "entry_price": 0.28,
+          "amount_usdt": 10,
+          "sl": 0.325,
+          "tp1": 0.22,
+          "tp2": 0.181,
+          "tp3": 0.124,
+          "status": "OPEN"
+        }
+      ],
+      "watchlist": [
+        {
+          "symbol": "ALLOUSDT",
+          "direction": "SHORT",
+          "entry_zone": "0.24-0.26",
+          "sl": 0.28,
+          "tp1": 0.20,
+          "tp2": 0.18,
+          "note": "RSI 85 OB, BB 119%, MACD neg. Short on rejection."
+        },
+        {
+          "symbol": "BANANAS31USDT",
+          "direction": "SKIP",
+          "entry_zone": "n/a",
+          "sl": 0,
+          "tp1": 0,
+          "tp2": 0,
+          "note": "Memecoin. Low vol 0.3x. SKIP."
+        },
+        {
+          "symbol": "ADAUSDT",
+          "direction": "LONG",
+          "entry_zone": "0.20-0.22",
+          "sl": 0.19,
+          "tp1": 0.26,
+          "tp2": 0.28,
+          "note": "RSI 39, BB 24%. Wait pullback to 0.20-0.22. SMA above price."
+        },
+        {
+          "symbol": "NEARUSDT",
+          "direction": "SHORT",
+          "entry_zone": "2.30-2.40",
+          "sl": 2.55,
+          "tp1": 2.00,
+          "tp2": 1.80,
+          "note": "RSI 64, MACD neg, -7.5% today. Short on continuation."
+        },
+        {
+          "symbol": "DASHUSDT",
+          "direction": "LONG",
+          "entry_zone": "36-38",
+          "sl": 34,
+          "tp1": 42,
+          "tp2": 45,
+          "note": "RSI 44, BB 18%, MACD+. Wait pullback."
+        },
+        {
+          "symbol": "PLAYUSDT",
+          "direction": "SKIP",
+          "entry_zone": "n/a",
+          "sl": 0,
+          "tp1": 0,
+          "tp2": 0,
+          "note": "PARABOLIC +107% 7d, now TRANSITION phase. RSI 57, BB 102%. Score 25% (F). Wait for better setup."
+        },
+        {
+          "symbol": "STGUSDT",
+          "direction": "SHORT",
+          "entry_zone": "0.38-0.42",
+          "sl": 0.445,
+          "tp1": 0.327,
+          "tp2": 0.280,
+          "tp3": 0.210,
+          "note": "PARABOLIC +138% 7d, RSI 81, BB 145%, vol 13.6x. MACD still +, wait for reversal confirmation."
+        },
+        {
+          "symbol": "ALGOUSDT",
+          "direction": "SKIP",
+          "entry_zone": "n/a",
+          "sl": 0,
+          "tp1": 0,
+          "tp2": 0,
+          "note": "No clear setup. Monitor."
+        }
+      ],
+      "settings": {
+        "monitor": {
+          "interval_minutes": 5,
+          "sl_warning_pct": 5,
+          "sl_danger_pct": 3,
+          "big_move_1h_pct": 10
+        },
+        "report": {
+          "interval_hours": 2,
+          "show_closed_today": true,
+          "show_watchlist": true
+        }
+      },
+      "last_updated": "2026-05-31T23:00:00Z"
+    }
