@@ -17,6 +17,7 @@ from pydantic import BaseModel
 from dotenv import load_dotenv
 
 from engine import analyze_coin
+from long_term import analyze as analyze_long_term_coin
 
 load_dotenv()
 logging.basicConfig(level=logging.INFO)
@@ -167,6 +168,20 @@ async def hermes_analyze(req: HermesRequest):
         "analysis": analysis_data,
         "llm_verdict": llm_response,
     }
+
+
+@app.post("/analyze/long-term", dependencies=[Depends(verify_api_key)])
+async def analyze_long_term_endpoint(req: AnalyzeRequest):
+    """
+    Долгосрочный анализ через long_term.py.
+    Мультитаймфреймный (1d+1w+1M), широкие SL, оба направления.
+    """
+    try:
+        result = await analyze_long_term_coin(req.symbol, req.deposit)
+        return {"agent": "binance-longterm-v1", "analysis": result}
+    except Exception as e:
+        log.error(f"Long-term error for {req.symbol}: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 def build_hermes_prompt(user_prompt: str, analysis: dict, deposit: float) -> str:
