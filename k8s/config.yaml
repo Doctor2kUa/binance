@@ -61,63 +61,63 @@ data:
     \      \"opened_at\": \"2026-06-01\",\n      \"entry_price\": 0.0849,\n      \"\
     amount_usdt\": 9.4,\n      \"sl\": 0.0837,\n      \"tp1\": 0.0855,\n      \"tp2\"\
     : 0.0868,\n      \"status\": \"OPEN\"\n    }\n  ],\n  \"watchlist\": [\n    {\n\
-    \      \"symbol\": \"ADAUSDT\",\n      \"direction\": \"LONG\",\n      \"entry_zone\"\
+    \      \"symbol\": \"ADAUSDT\",\n      \"direction\": \"BOTH\",\n      \"entry_zone\"\
     : \"0.2174-0.2402\",\n      \"sl\": 0.2252,\n      \"tp1\": 0.2309,\n      \"\
     tp2\": 0.2354,\n      \"tp3\": 0.2372,\n      \"note\": \"Closed at $0.2309 (PnL\
     \ $+0.37). Re-entry zone.\"\n    },\n    {\n      \"symbol\": \"NEARUSDT\",\n\
-    \      \"direction\": \"SHORT\",\n      \"entry_zone\": \"2.46-2.71\",\n     \
-    \ \"sl\": 2.613,\n      \"tp1\": 2.395,\n      \"tp2\": 2.198,\n      \"tp3\"\
-    : 2.33,\n      \"note\": \"Closed at $2.61 (PnL $-0.21). Re-entry zone.\"\n  \
-    \  },\n    {\n      \"symbol\": \"PORTALUSDT\",\n      \"direction\": \"SHORT\"\
-    ,\n      \"entry_zone\": \"0.0356-0.0394\",\n      \"sl\": 0.04328,\n      \"\
-    tp1\": 0.028805,\n      \"tp2\": 0.023015,\n      \"tp3\": 0.01433,\n      \"\
-    note\": \"Closed at $0.0288 (PnL $+3.02). Re-entry zone.\"\n    },\n    {\n  \
-    \    \"symbol\": \"1INCHUSDT\",\n      \"direction\": \"LONG\",\n      \"entry_zone\"\
+    \      \"direction\": \"BOTH\",\n      \"entry_zone\": \"2.46-2.71\",\n      \"\
+    sl\": 2.613,\n      \"tp1\": 2.395,\n      \"tp2\": 2.198,\n      \"tp3\": 2.33,\n\
+    \      \"note\": \"Closed at $2.61 (PnL $-0.21). Re-entry zone.\"\n    },\n  \
+    \  {\n      \"symbol\": \"PORTALUSDT\",\n      \"direction\": \"BOTH\",\n    \
+    \  \"entry_zone\": \"0.0356-0.0394\",\n      \"sl\": 0.04328,\n      \"tp1\":\
+    \ 0.028805,\n      \"tp2\": 0.023015,\n      \"tp3\": 0.01433,\n      \"note\"\
+    : \"Closed at $0.0288 (PnL $+3.02). Re-entry zone.\"\n    },\n    {\n      \"\
+    symbol\": \"1INCHUSDT\",\n      \"direction\": \"BOTH\",\n      \"entry_zone\"\
     : \"0.0849\",\n      \"sl\": 0.0837,\n      \"tp1\": 0.0855,\n      \"tp2\": 0.0868,\n\
     \      \"tp3\": 0,\n      \"note\": \"LONG 2x @ $0.0849, $9.4. TP1 $0.0855 hit.\
     \ Move SL to entry?\"\n    },\n    {\n      \"symbol\": \"FETUSDT\",\n      \"\
-    direction\": \"SHORT\",\n      \"entry_zone\": \"n/a\",\n      \"sl\": 0,\n  \
-    \    \"tp1\": 0,\n      \"tp2\": 0,\n      \"tp3\": 0,\n      \"note\": \"Added\
+    direction\": \"BOTH\",\n      \"entry_zone\": \"n/a\",\n      \"sl\": 0,\n   \
+    \   \"tp1\": 0,\n      \"tp2\": 0,\n      \"tp3\": 0,\n      \"note\": \"Added\
     \ 2026-06-01 09:47 UTC\"\n    },\n    {\n      \"symbol\": \"STGUSDT\",\n    \
-    \  \"direction\": \"SHORT\",\n      \"entry_zone\": \"0.28-0.32\",\n      \"sl\"\
+    \  \"direction\": \"BOTH\",\n      \"entry_zone\": \"0.28-0.32\",\n      \"sl\"\
     : 0.349,\n      \"tp1\": 0.235,\n      \"tp2\": 0.185,\n      \"tp3\": 0.12,\n\
     \      \"note\": \"Closed at $0.302 (+$6.95). Was SHORT 3x @ $0.372. Watch for\
     \ re-entry.\"\n    },\n    {\n      \"symbol\": \"TRUMPUSDT\",\n      \"direction\"\
-    : \"SHORT\",\n      \"entry_zone\": \"1.96\",\n      \"sl\": 2.08,\n      \"tp1\"\
+    : \"BOTH\",\n      \"entry_zone\": \"1.96\",\n      \"sl\": 2.08,\n      \"tp1\"\
     : 1.7,\n      \"tp2\": 0,\n      \"tp3\": 0,\n      \"note\": \"Memecoin. Short\
     \ only. SL tight at +6%.\"\n    },\n    {\n      \"symbol\": \"LINKUSDT\",\n \
-    \     \"direction\": \"SKIP\",\n      \"entry_zone\": \"n/a\",\n      \"sl\":\
+    \     \"direction\": \"BOTH\",\n      \"entry_zone\": \"n/a\",\n      \"sl\":\
     \ 0,\n      \"tp1\": 0,\n      \"tp2\": 0,\n      \"note\": \"SIDEWAYS, RSI 40,\
     \ BB 19%, MACD -0.07, Vol 0.3x. Score 7% (F).\"\n    },\n    {\n      \"symbol\"\
-    : \"WAXPUSDT\",\n      \"direction\": \"SKIP\",\n      \"entry_zone\": \"n/a\"\
+    : \"WAXPUSDT\",\n      \"direction\": \"BOTH\",\n      \"entry_zone\": \"n/a\"\
     ,\n      \"sl\": 0,\n      \"tp1\": 0,\n      \"tp2\": 0,\n      \"note\": \"\
     SIDEWAYS, RSI 39, BB 25%, MACD flat, Vol 0.3x. Score 7% (F).\"\n    },\n    {\n\
-    \      \"symbol\": \"GUAUSDT\",\n      \"direction\": \"SKIP\",\n      \"entry_zone\"\
+    \      \"symbol\": \"GUAUSDT\",\n      \"direction\": \"BOTH\",\n      \"entry_zone\"\
     : \"n/a\",\n      \"sl\": 0,\n      \"tp1\": 0,\n      \"tp2\": 0,\n      \"note\"\
     : \"PARABOLIC down -40% 7d, RSI 48, MACD neg, Vol 0.1x. Score 15% (F).\"\n   \
-    \ },\n    {\n      \"symbol\": \"ALLOUSDT\",\n      \"direction\": \"SHORT\",\n\
+    \ },\n    {\n      \"symbol\": \"ALLOUSDT\",\n      \"direction\": \"BOTH\",\n\
     \      \"entry_zone\": \"0.24-0.28\",\n      \"sl\": 0.325,\n      \"tp1\": 0.22,\n\
     \      \"tp2\": 0.181,\n      \"note\": \"Closed at $0.2 (+$1.43). Watch for re-entry.\"\
-    \n    },\n    {\n      \"symbol\": \"ZECUSDT\",\n      \"direction\": \"LONG\"\
+    \n    },\n    {\n      \"symbol\": \"ZECUSDT\",\n      \"direction\": \"BOTH\"\
     ,\n      \"entry_zone\": \"520-540\",\n      \"sl\": 470,\n      \"tp1\": 575,\n\
     \      \"tp2\": 600,\n      \"note\": \"Closed at $544 (+$0.37). MACD -17 bearish.\
     \ Wait for SMA20 breakthrough.\"\n    },\n    {\n      \"symbol\": \"BCHUSDT\"\
-    ,\n      \"direction\": \"LONG\",\n      \"entry_zone\": \"290-300\",\n      \"\
+    ,\n      \"direction\": \"BOTH\",\n      \"entry_zone\": \"290-300\",\n      \"\
     sl\": 280,\n      \"tp1\": 340,\n      \"tp2\": 370,\n      \"note\": \"Closed\
     \ at $290.65 (+$0.23). LONG 2x @ $289.99. Oversold bounce didn't materialize.\"\
     \n    },\n    {\n      \"symbol\": \"BANANAS31USDT\",\n      \"direction\": \"\
-    SKIP\",\n      \"entry_zone\": \"n/a\",\n      \"sl\": 0,\n      \"tp1\": 0,\n\
+    BOTH\",\n      \"entry_zone\": \"n/a\",\n      \"sl\": 0,\n      \"tp1\": 0,\n\
     \      \"tp2\": 0,\n      \"note\": \"Memecoin. Low vol 0.3x. SKIP.\"\n    },\n\
-    \    {\n      \"symbol\": \"DASHUSDT\",\n      \"direction\": \"LONG\",\n    \
+    \    {\n      \"symbol\": \"DASHUSDT\",\n      \"direction\": \"BOTH\",\n    \
     \  \"entry_zone\": \"36-38\",\n      \"sl\": 34,\n      \"tp1\": 42,\n      \"\
     tp2\": 45,\n      \"note\": \"RSI 44, BB 18%, MACD+. Wait pullback.\"\n    },\n\
-    \    {\n      \"symbol\": \"ALGOUSDT\",\n      \"direction\": \"SKIP\",\n    \
+    \    {\n      \"symbol\": \"ALGOUSDT\",\n      \"direction\": \"BOTH\",\n    \
     \  \"entry_zone\": \"n/a\",\n      \"sl\": 0,\n      \"tp1\": 0,\n      \"tp2\"\
     : 0,\n      \"note\": \"No clear setup. Monitor.\"\n    },\n    {\n      \"symbol\"\
-    : \"NAORISUSDT\",\n      \"direction\": \"SKIP\",\n      \"entry_zone\": \"n/a\"\
+    : \"NAORISUSDT\",\n      \"direction\": \"BOTH\",\n      \"entry_zone\": \"n/a\"\
     ,\n      \"sl\": 0,\n      \"tp1\": 0,\n      \"tp2\": 0,\n      \"note\": \"\
     SIDEWAYS, RSI 37, BB 38%, MACD flat, Vol 0.1x. Score 0% (F).\"\n    },\n    {\n\
-    \      \"symbol\": \"PLAYUSDT\",\n      \"direction\": \"SKIP\",\n      \"entry_zone\"\
+    \      \"symbol\": \"PLAYUSDT\",\n      \"direction\": \"BOTH\",\n      \"entry_zone\"\
     : \"n/a\",\n      \"sl\": 0,\n      \"tp1\": 0,\n      \"tp2\": 0,\n      \"note\"\
     : \"PARABOLIC +107% 7d, TRANSITION phase. RSI 57, BB 102%. Score 25% (F).\"\n\
     \    }\n  ],\n  \"settings\": {\n    \"monitor\": {\n      \"interval_minutes\"\

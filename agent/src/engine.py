@@ -587,3 +587,175 @@ async def analyze_coin(
     result["entry_params"] = calc_entry_params(price, atr, direction, deposit, amount)
 
     return result
+
+
+# ─── CLI ────────────────────────────────────────────────────────────
+
+def analyze_sync(symbol: str, deposit: float = 1000.0, amount: float = 10.0) -> dict:
+    """Sync wrapper for analyze_coin."""
+    import asyncio
+    try:
+        loop = asyncio.get_running_loop()
+    except RuntimeError:
+        loop = None
+    if loop and loop.is_running():
+        import nest_asyncio  # type: ignore
+        nest_asyncio.apply()
+        return loop.run_until_complete(analyze_coin(symbol, deposit, amount))
+    else:
+        return asyncio.run(analyze_coin(symbol, deposit, amount))
+
+
+def format_result(r: dict) -> str:
+    """Format analysis result for CLI output."""
+    lines = []
+    sym = r["symbol"]
+    lines.append("")
+    lines.append("=" * 65)
+    lines.append(f"  {sym} — {'SKIP' if r.get('skip') else r['direction']}")
+    lines.append("=" * 65)
+    lines.append("")
+    lines.append(f"  Price:     ${r['price']:.6f}".rstrip("0").rstrip("."))
+    lines.append(f"  Direction: {r['direction']}")
+    lines.append(f"  Score:     {r['score']}/100  |  Rating: {r['rating']}")
+    lines.append(f"  Danger:    {r['danger']} ({r['danger_score']})")
+    lines.append("")
+    ind = r["indicators"]
+    lines.append(f"  RSI: {ind['rsi']:.0f}  BB: {ind['bb_pos']:.0f}%  MACD hist: {ind['macd_hist']:.6f}".rstrip("0").rstrip("."))
+    lines.append(f"  MOM 7d: {ind['mom_7d']:+.1f}%  Vol ratio: {ind['vol_ratio']:.1f}x")
+    if ind.get("btc_correlation") is not None:
+        lines.append(f"  BTC corr: {ind['btc_correlation']:.3f}")
+
+    bd = r["score_breakdown"]
+    lines.append("")
+    lines.append(f"  Score breakdown:")
+    lines.append(f"    LONG:  RSI={bd['long']['rsi']:>2} BB={bd['long']['bb']:>2} MACD={bd['long']['macd']:>2} VOL={bd['long']['volume']:>2} SMA={bd['long']['sma_trend']:>2} MOM={bd['long']['momentum']:>2}  raw={bd['long']['raw']:>2} final={bd['long']['final']:>2}")
+    lines.append(f"    SHORT: RSI={bd['short']['rsi']:>2} BB={bd['short']['bb']:>2} MACD={bd['short']['macd']:>2} VOL={bd['short']['volume']:>2} SMA={bd['short']['sma_trend']:>2} MOM={bd['short']['momentum']:>2}  raw={bd['short']['raw']:>2} final={bd['short']['final']:>2}")
+    if bd["penalties"]:
+        pen_str = "  ".join([f"{k}: {v}" for k, v in bd["penalties"].items()])
+        lines.append(f"    Penalties: {pen_str}")
+
+    if r.get("skip"):
+        lines.append("")
+        lines.append(f"  ⛔ SKIP: {r.get('skip_reason', 'Rating below B')}")
+    else:
+        ep = r["entry_params"]
+        lines.append("")
+        lines.append(f"  Entry:  ${ep['entry']:.6f}".rstrip("0").rstrip("."))
+        lines.append(f"  SL:     ${ep['sl']:.6f}".rstrip("0").rstrip(".") + f"  ({ep['sl_pct']:+.1f}%)")
+        lines.append(f"  TP1:    ${ep['tp1']:.6f}".rstrip("0").rstrip(".") + f"  ({ep['tp1_pct']:+.1f}%)  R/R {ep['rr_tp1']}")
+        lines.append(f"  TP2:    ${ep['tp2']:.6f}".rstrip("0").rstrip(".") + f"  ({ep['tp2_pct']:+.1f}%)")
+        lines.append(f"  TP3:    ${ep['tp3']:.6f}".rstrip("0").rstrip(".") + f"  ({ep['tp3_pct']:+.1f}%)  R/R {ep['rr_tp3']}")
+        lines.append(f"  Size:   ${ep['size_usdt']}  Leverage: {ep['leverage']}x")
+
+    lines.append("")
+    return "\n".join(lines)
+
+
+if __name__ == "__main__":
+    import sys
+    import json as _json
+    import time
+
+    if len(sys.argv) < 2:
+        print("Usage:")
+        print("  python3 engine.py analyze SYMBOL [deposit] [amount]")
+        print("  python3 engine.py watchlist [file]")
+        print("  python3 engine.py json SYMBOL")
+        print("")
+        print("Examples:")
+        print("  python3 engine.py analyze BTC")
+        print("  python3 engine.py analyze ETH 5000 50")
+        print("  python3 engine.py watchlist")
+        print("  python3 engine.py watchlist /path/to/watchlist.json")
+        sys.exit(1)
+
+    cmd = sys.argv[1].lower()
+
+    if cmd == "analyze":
+        sym = sys.argv[2].upper()
+        deposit = float(sys.argv[3]) if len(sys.argv) > 3 else 1000.0
+        amount = float(sys.argv[4]) if len(sys.argv) > 4 else 10.0
+        r = analyze_sync(sym, deposit, amount)
+        print(format_result(r))
+
+    elif cmd == "json":
+        sym = sys.argv[2].upper()
+        r = analyze_sync(sym)
+        print(_json.dumps(r, indent=2, default=str))
+
+    elif cmd == "watchlist":
+        import asyncio as _asyncio
+
+        # Default watchlist from config.yaml
+        watchlist = [
+            "NEAR", "1INCH", "FET", "STG", "TRUMP", "ALLO",
+            "ZEC", "BCH", "ADA", "DASH", "PORTAL",
+        ]
+        # Allow custom watchlist file
+        if len(sys.argv) > 2:
+            import yaml
+            with open(sys.argv[2]) as f:
+                cfg = yaml.safe_load(f)
+            try:
+                wl_data = _json.loads(cfg["data"]["positions.json"])
+                watchlist = [w["symbol"].replace("USDT", "") for w in wl_data["watchlist"] if w.get("direction") != "SKIP"]
+            except Exception as e:
+                print(f"  Warning: could not parse watchlist from config: {e}")
+                print(f"  Using default watchlist")
+
+        async def run_watchlist():
+            tasks = [analyze_coin(s) for s in watchlist]
+            return await _asyncio.gather(*tasks, return_exceptions=True)
+
+        all_results = _asyncio.run(run_watchlist())
+
+        print(f"\n{'='*95}")
+        print(f"  WATCHLIST ANALYSIS — {time.strftime('%H:%M:%S')}")
+        print(f"  Analyzing BOTH directions for each coin")
+        print(f"{'='*95}")
+
+        candidates = []
+        skipped = []
+        errors = []
+
+        for i, r in enumerate(all_results):
+            if isinstance(r, Exception):
+                errors.append((watchlist[i], str(r)))
+                continue
+            if r.get("skip"):
+                skipped.append(r)
+            else:
+                candidates.append(r)
+
+        # Sort by score
+        candidates.sort(key=lambda x: x["score"], reverse=True)
+        skipped.sort(key=lambda x: x["score"], reverse=True)
+
+        if candidates:
+            print(f"\n  CANDIDATES ({len(candidates)}):")
+            for r in candidates:
+                print(format_result(r))
+        else:
+            print(f"\n  No candidates (all below B threshold)")
+
+        print(f"\n{'='*95}")
+        print(f"  SKIPPED ({len(skipped)}):")
+        for r in skipped:
+            sym = r["symbol"]
+            sc = r["score"]
+            rt = r["rating"]
+            reason = r.get("skip_reason", "")
+            print(f"    {sym:>12}  {rt} ({sc:>3}/100)  {reason}")
+
+        if errors:
+            print(f"\n  ERRORS ({len(errors)}):")
+            for sym, err in errors:
+                print(f"    {sym}: {err}")
+
+        print(f"\nDone. {len(candidates)} candidates, {len(skipped)} skipped, {len(errors)} errors.")
+
+    else:
+        print(f"Unknown command: {cmd}")
+        print("Commands: analyze, json, watchlist")
+        sys.exit(1)
