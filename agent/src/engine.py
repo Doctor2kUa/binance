@@ -143,6 +143,8 @@ def rating(pct):
 
 def score_dir(price, rsi, bb_p, m, sig, hist, s20, s50, direction):
     sc, reasons, risks = 0, [], []
+    # MACD hysteresis threshold: 0.3% of price to avoid noise
+    macd_threshold = price * 0.003
     if direction == "LONG":
         if rsi is not None:
             if 20 <= rsi <= 35: sc += 25; reasons.append(f"RSI {rsi} OS")
@@ -156,10 +158,12 @@ def score_dir(price, rsi, bb_p, m, sig, hist, s20, s50, direction):
             elif bb_p <= 35: sc += 10
             elif bb_p <= 45: sc += 5
         if m is not None:
-            if m > sig and hist > 0: sc += 20; reasons.append("MACD+")
+            # MACD with hysteresis: strong signal only if hist > threshold
+            if m > sig and hist > macd_threshold: sc += 20; reasons.append("MACD+")
             elif m > sig: sc += 10
-            elif m < sig and hist < 0: sc -= 15; risks.append("MACD-")
-            else: sc += 5
+            elif m < sig and hist < -macd_threshold: sc -= 10; risks.append("MACD-")
+            elif m < sig: sc -= 5
+            else: sc += 5  # neutral zone (hist near 0)
         if s20 and s50:
             if price < s20 < s50: sc += 20; reasons.append("Below SMA")
             elif price < s20: sc += 10
@@ -178,10 +182,12 @@ def score_dir(price, rsi, bb_p, m, sig, hist, s20, s50, direction):
             elif bb_p >= 65: sc += 10
             elif bb_p >= 55: sc += 5
         if m is not None:
-            if m < sig and hist < 0: sc += 20; reasons.append("MACD-")
+            # MACD with hysteresis for SHORT
+            if m < sig and hist < -macd_threshold: sc += 20; reasons.append("MACD-")
             elif m < sig: sc += 10
-            elif m > sig and hist > 0: sc -= 15; risks.append("MACD+")
-            else: sc += 5
+            elif m > sig and hist > macd_threshold: sc -= 10; risks.append("MACD+")
+            elif m > sig: sc -= 5
+            else: sc += 5  # neutral zone
         if s20 and s50:
             if price > s20 > s50: sc += 20; reasons.append("Above SMA")
             elif price > s20: sc += 10
